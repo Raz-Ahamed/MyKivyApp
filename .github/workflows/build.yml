@@ -12,21 +12,26 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Install Dependencies
+    - name: Setup Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+
+    - name: Prepare Buildozer
       run: |
-        sudo apt update
-        sudo apt install -y git zip unzip openjdk-17-jdk python3-pip autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo5 cmake libffi-dev libssl-dev build-essential libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev libportmidi-dev libswscale-dev libavformat-dev libavcodec-dev
-        pip3 install --upgrade pip setuptools virtualenv
         pip3 install buildozer cython==0.29.33
+        buildozer init
 
-    - name: Initialize Buildozer (Auto Config)
-      run: buildozer init
+    - name: Build APK (Auto-Accepts Licenses)
+      uses: ArtemSBulgakov/buildozer-action@v1
+      id: buildozer
+      with:
+        command: buildozer android debug
+        buildozer_version: master
 
-    - name: Build APK File
-      run: yes | buildozer -v android debug
-
-    - name: Upload APK for Download
+    - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
         name: My-App-APK
-        path: bin/*.apk
+        path: ${{ steps.buildozer.outputs.filename }}
