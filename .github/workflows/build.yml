@@ -7,31 +7,36 @@ on:
 
 jobs:
   build-android:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-20.04
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Setup Java
-      uses: actions/setup-java@v4
+    - name: Setup Python
+      uses: actions/setup-python@v5
       with:
-        distribution: 'temurin'
-        java-version: '17'
+        python-version: '3.10'
 
-    - name: Prepare Buildozer
+    - name: Install System Dependencies
       run: |
-        pip3 install buildozer cython==0.29.33
+        sudo apt-get update
+        sudo apt-get install -y build-essential git python3-dev ffmpeg libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev libportmidi-dev libswscale-dev libavformat-dev libavcodec-dev zlib1g-dev libffi-dev libssl-dev unzip openjdk-17-jdk
+
+    - name: Install Buildozer & Cython
+      run: |
+        pip install --upgrade pip
+        pip install buildozer cython==0.29.33
+
+    - name: Create Spec & Auto-Accept Licenses
+      run: |
         buildozer init
+        echo "android.accept_sdk_license = True" >> buildozer.spec
 
-    - name: Build APK (Auto-Accepts Licenses)
-      uses: ArtemSBulgakov/buildozer-action@v1
-      id: buildozer
-      with:
-        command: buildozer android debug
-        buildozer_version: master
+    - name: Build APK File
+      run: buildozer -v android debug
 
-    - name: Upload APK
+    - name: Upload Final APK
       uses: actions/upload-artifact@v4
       with:
         name: My-App-APK
-        path: ${{ steps.buildozer.outputs.filename }}
+        path: bin/*.apk
